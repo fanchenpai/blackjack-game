@@ -73,7 +73,7 @@ puts "\> Hello, #{player_name}\n\n"
 
 continue_to_play = true
 game_count = 1
-curr_deck = deck.shuffle
+curr_deck = deck.shuffle.shuffle.shuffle.shuffle
 
 while continue_to_play
 
@@ -87,16 +87,17 @@ while continue_to_play
   dealer_total = calculate_total(dealer_hand)
 
   print_player_cards(player_hand, player_total, player_name)
-  print_player_cards(dealer_hand, dealer_total, "Dealer")
+  #print_player_cards(dealer_hand, dealer_total, "Dealer")
+
+
+  game_over = false
 
   if player_total == 21
     puts "\> Blackjack! You win!\n\n"
-    break
+    game_over = true
   end
 
   player_stay = false
-  game_over = false
-
   until player_stay || player_total >=21
     player_action = ask_hit_or_stay
     if player_action == 'h'
