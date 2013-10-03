@@ -89,12 +89,8 @@ dealer_stay = false
 until game_over
 
   player_total = calculate_total(player_hand)
-  #player_total = recalculate_total(player_hand) if player_total > 21
-
-
   dealer_total = calculate_total(dealer_hand)
-  #dealer_total = recalculate_total(dealer_hand) if dealer_total > 21
-  #print_player_cards(dealer_hand, dealer_total, "Dealer")
+
   print_player_cards(player_hand, player_total, player_name)
 
   if player_total == 21
@@ -116,7 +112,7 @@ until game_over
     player_hand << new_card
     say "You get a #{new_card[0]} #{new_card[1]}\n\n"
     player_total = calculate_total(player_hand)
-    #player_total = recalculate_total(player_hand) if player_total > 21
+
     if player_total == 21
       say "BlackJack! You win!\n\n"
       game_over = true
@@ -137,7 +133,6 @@ until game_over
   end
 
   dealer_total = calculate_total(dealer_hand)
-  #dealer_total = recalculate_total(dealer_hand) if dealer_total > 21
 
   if dealer_total > 21
     say "Dealer busted! You win!\n\n"
@@ -161,7 +156,3 @@ end
 print_player_cards(player_hand, player_total, player_name)
 print_player_cards(dealer_hand, dealer_total, "Dealer")
 
-
-#until game_over
-
-#end
