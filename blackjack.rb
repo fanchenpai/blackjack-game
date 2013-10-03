@@ -25,7 +25,7 @@ def ask_hit_or_stay
     end
   end
   puts "\> You chose to #{s=='h' ? 'Hit' : 'Stay'}\n\n"
-  s
+  s.downcase.strip
 end
 
 def calculate_total(arr = [])
@@ -73,95 +73,74 @@ puts "\> Hello, #{player_name}\n\n"
 
 continue_to_play = true
 game_count = 1
-curr_deck = deck().shuffle
+curr_deck = deck.shuffle
 
 while continue_to_play
 
-  puts "\> Game started...Round #{game_count}\n\n"
+  puts "=== Blackjack - Round #{game_count} ===\n\n"
 
   curr_deck = deck().shuffle if curr_deck.length < 4
 
   player_hand = [curr_deck.pop, curr_deck.pop]
   dealer_hand = [curr_deck.pop, curr_deck.pop]
+  player_total = calculate_total(player_hand)
+  dealer_total = calculate_total(dealer_hand)
 
-  game_over = false
-  player_busted = false
+  print_player_cards(player_hand, player_total, player_name)
+  print_player_cards(dealer_hand, dealer_total, "Dealer")
+
+  if player_total == 21
+    puts "\> Blackjack! You win!\n\n"
+    break
+  end
+
   player_stay = false
-  dealer_busted = false
-  dealer_stay = false
+  game_over = false
 
-  until game_over
-
-    player_total = calculate_total(player_hand)
-    dealer_total = calculate_total(dealer_hand)
-
-    print_player_cards(player_hand, player_total, player_name)
-    print_player_cards(dealer_hand, dealer_total, "Dealer")
-
-    if player_total == 21
-      puts "\> BlackJack! You win!\n\n"
-      game_over = true
-      break
-    end
-
-    unless player_stay == true
-      player_action = ask_hit_or_stay
-    else
-      puts "\> You had chosen to stay. Hit [Enter] to continue..."
-      gets
-    end
-    player_stay = true if player_action == 's'
-
-    unless player_stay
+  until player_stay || player_total >=21
+    player_action = ask_hit_or_stay
+    if player_action == 'h'
       curr_deck = deck().shuffle if curr_deck.length == 0
       new_card = curr_deck.pop
       player_hand << new_card
       puts "\> You get a [#{new_card[0]} #{new_card[1]}]\n\n"
       player_total = calculate_total(player_hand)
+      print_player_cards(player_hand, player_total, player_name)
 
       if player_total == 21
-        puts "\> BlackJack! You win!\n\n"
+        puts "\> Blackjack! You win!\n\n"
         game_over = true
-        break
       elsif player_total > 21
         puts "\> Busted! You lose!\n\n"
         game_over = true
-        break
       end
-    end
-
-    dealer_stay = dealer_total >= 17
-    unless dealer_stay
-      curr_deck = deck().shuffle if curr_deck.length == 0
-      dealer_hand << curr_deck.pop
-      puts "\> Dealer chose to hit\n\n"
     else
-      puts "\> Dealer chose stay\n\n"
+      player_stay = true
     end
-
-    dealer_total = calculate_total(dealer_hand)
-
-    if dealer_total > 21
-      puts "\> Dealer busted! You win!\n\n"
-      game_over = true
-    else
-      if player_stay && dealer_stay
-        if player_total > dealer_total
-          puts "\> You win!\n\n"
-        elsif dealer_total > player_total
-          puts "\> You lose!\n\n"
-        else
-          puts "\> It's a tie.\n\n"
-        end
-        game_over = true
-      end
-    end
-
-    puts "\n"
   end
 
-  print_player_cards(player_hand, player_total, player_name)
+  until dealer_total >= 17 || game_over
+    curr_deck = deck().shuffle if curr_deck.length == 0
+    new_card = curr_deck.pop
+    dealer_hand << new_card
+    puts "\> Dealer gets a [#{new_card[0]} #{new_card[1]}]\n\n"
+    dealer_total = calculate_total(dealer_hand)
+  end
   print_player_cards(dealer_hand, dealer_total, "Dealer")
+
+  unless game_over
+    if dealer_total > 21
+    puts "\> Dealer busted! You win!\n\n"
+    else
+      if player_total > dealer_total
+        puts "\> You win!\n\n"
+      elsif dealer_total > player_total
+        puts "\> You lose!\n\n"
+      else
+        puts "\> It's a tie.\n\n"
+      end
+    end
+  end
 
   continue_to_play = ask_to_continue
   game_count += 1
