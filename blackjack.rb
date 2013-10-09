@@ -73,13 +73,13 @@ puts "\> Hello, #{player_name}\n\n"
 
 continue_to_play = true
 game_count = 1
-curr_deck = deck.shuffle.shuffle.shuffle.shuffle
+curr_deck = deck.shuffle
 
 while continue_to_play
 
   puts "=== Blackjack - Round #{game_count} ===\n\n"
 
-  curr_deck = deck().shuffle if curr_deck.length < 4
+  curr_deck = deck.shuffle if curr_deck.length < 4
 
   player_hand = [curr_deck.pop, curr_deck.pop]
   dealer_hand = [curr_deck.pop, curr_deck.pop]
