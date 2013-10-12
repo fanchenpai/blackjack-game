@@ -33,11 +33,6 @@ module BlackjackRule
   def blackjack? (v)
     v == BLACKJACK_NUMBER
   end
-
-  def compare_result
-
-  end
-
 end
 
 
