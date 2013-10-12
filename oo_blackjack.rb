@@ -1,32 +1,37 @@
 
 
 
-module Blackjack
+module BlackjackRule
   BLACKJACK_NUMBER = 21
   DEALER_STOP_POINT = 17
+
   def calculate_total(arr)
-  total = 0
-  ace_count = 0
-  arr.each do |card|
-    break unless card.instance_of? Card
-    if card.face_value.to_i.to_s == card.face_value
-      total += card.face_value.to_i
-    elsif ['J','Q','K'].include?(card.face_value)
-      total += 10
-    else # 'A'
-      total += 11
-      ace_count += 1
+    total = 0
+    ace_count = 0
+    arr.each do |card|
+      break unless card.instance_of? Card
+      if card.face_value.to_i.to_s == card.face_value
+        total += card.face_value.to_i
+      elsif ['J','Q','K'].include?(card.face_value)
+        total += 10
+      else # 'A'
+        total += 11
+        ace_count += 1
+      end
     end
-  end
-  until ace_count == 0 || total <= BLACKJACK_NUMBER
-    total -= 10
-    ace_count -= 1
-  end
-  total
+    until ace_count == 0 || total <= BLACKJACK_NUMBER
+      total -= 10
+      ace_count -= 1
+    end
+    total
   end
 
   def busted? (v)
     v > BLACKJACK_NUMBER
+  end
+
+  def blackjack? (v)
+    v == BLACKJACK_NUMBER
   end
 
   def compare_result
@@ -38,15 +43,24 @@ end
 
 
 class Card
-  attr_accessor :suit, :face_value
+  attr_accessor :suit, :face_value, :hidden
 
   def initialize (s,v)
     @suit = s
     @face_value = v
+    @hidden = false
   end
 
   def to_s
-    "[ #{@suit} #{face_value} ]"
+    @hidden ? "[** hidden **]" : "[ #{@suit} #{face_value} ]"
+  end
+
+  def show_card
+    @hidden = false
+  end
+
+  def hide_card
+    @hidden = true
   end
 
 end
@@ -74,21 +88,21 @@ class Deck
     cards
   end
 
-  def deal
+  def deal_one
     initialize(@num_decks,@in_order) if @cards.empty?
     puts "Dealing..."
     @cards.pop
   end
 
   def shuffle!
-    @cards.shuffle!
+    @cards.shuffle!.shuffle!
   end
 
 end
 
 
 class Participant
-  include Blackjack
+  include BlackjackRule
   attr_accessor :name, :cards
 
   def initialize(s)
@@ -96,10 +110,20 @@ class Participant
     @cards = []
   end
 
+  def add_card(card, hidden=false)
+    hidden ? card.hide_card : card.show_card
+    cards << card
+    puts "#{name} gets a #{card}"
+  end
+
   def show_hand
     puts "Cards in #{@name}'s hand:"
     ret = cards.map { |c| c.to_s}
-    puts "#{ret.join(', ')} Total: #{total}"
+    puts "#{ret.join(', ')}"
+  end
+
+  def show_total
+    puts "Total: #{total}"
   end
 
   def info
@@ -108,6 +132,10 @@ class Participant
 
   def total
     calculate_total(cards)
+  end
+
+  def clear_hand
+    @cards = []
   end
 
 end
@@ -135,7 +163,7 @@ class Player < Participant
         puts "You chose to #{s=='1' ? 'Hit' : 'Stay'}\n\n"
         return s == '1'
       else
-        puts "#{s}\> Please enter either '1' or '2' to continue..."
+        puts "#{s}\> Please enter either '1' or '2' to round_continue..."
       end
     end
   end
@@ -143,17 +171,17 @@ class Player < Participant
 end
 
 
-class CardGame
-  include Blackjack
-  attr_accessor :players, :deck, :round_count
+class BlackjackGame
+  include BlackjackRule
+  attr_accessor :player, :dealer, :deck, :round_count, :round_over
 
   def initialize
-    @players = []
-    @round_count = 0
+    @round_count = 1
+    @round_over = false
     @deck = Deck.new
 
-    players << Player.new(get_user_name)
-    players << Dealer.new("Dealer")
+    @player = Player.new(get_user_name)
+    @dealer = Dealer.new("Dealer")
   end
 
   def get_user_name
@@ -168,40 +196,109 @@ class CardGame
     "Player"
   end
 
-  def run
+  def continue_to_play?
+    puts
+    puts "\> Do you want to start another round?"
+    puts "\> Type 'y' to continue, or hit [Enter] to end the game"
+    s = gets.chomp
+    s.downcase.strip == 'y' ? true : false
+  end
+
+  def clear_table
+    player.clear_hand
+    dealer.clear_hand
     @round_count += 1
+    @round_over = false
+  end
+
+  def run
+    game_header
+    initial_dealing
+    player_turn unless round_over
+    dealer_turn unless round_over
+    round_result
+    if continue_to_play?
+      clear_table
+      run
+    end
+  end
+
+  def game_header
+
     puts "******************************"
     puts "  Blackjack Game - Round #{round_count}"
     puts "******************************"
-    players.each do |p|
-      p.cards << deck.deal
-      p.cards << deck.deal
-      p.show_hand if p.instance_of? Player
-      while p.hit? do
-        p.cards << deck.deal
-        p.show_hand if p.instance_of? Player
-        # todo - check result
-      end
+  end
 
-      # todo - ask if continue
+  def initial_dealing
+    player.add_card(deck.deal_one)
+    player.add_card(deck.deal_one)
+    dealer.add_card(deck.deal_one,true)
+    dealer.add_card(deck.deal_one)
+    puts ""
+    player.show_hand
+    player.show_total
+    dealer.show_hand
+    puts ""
 
+  end
+
+  def player_turn
+    while round_continue? && player.hit? do
+      player.add_card(deck.deal_one)
+      player.show_hand
+      player.show_total
     end
+  end
 
+  def dealer_turn
+    while round_continue? && dealer.hit? do
+      dealer.add_card(deck.deal_one)
+    end
+  end
+
+  def round_continue?
+    @round_over = busted?(player.total) || blackjack?(player.total) || busted?(dealer.total) || blackjack?(dealer.total)
+    !round_over
+  end
+
+  def round_result
+    if busted?(player.total)
+      say_result "Busted. Sorry, you lose."
+    elsif blackjack?(player.total)
+      if blackjack?(dealer.total)
+        say_result "It's a tie. Both the deal and you hit Blackjack!"
+      else
+        say_result "Blackjack! You win!"
+      end
+    else
+      if busted?(dealer.total)
+        say_result "Dealer busted. You win!"
+      else
+        if player.total > dealer.total
+          say_result "You win!"
+        elsif player.total < dealer.total
+          say_result "You lose."
+        else
+          say_result "It's a tie."
+        end
+      end
+    end
+    dealer_flip
+  end
+
+  def say_result(s)
+    puts "==> #{s}"
+  end
+
+  def dealer_flip
+    dealer.cards[0].show_card
+    dealer.show_hand
+    dealer.show_total
   end
 
 end
 
-g = CardGame.new
+g = BlackjackGame.new
 g.run
-puts g.players.inspect
-
-
-# d = Deck.new
-# c_arr = []
-# 3.times { c_arr << d.deal }
-# puts c_arr
-
-# p = Player.new("test")
-# puts p.calculate_total(c_arr)
-
 
