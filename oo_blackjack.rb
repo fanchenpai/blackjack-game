@@ -1,6 +1,3 @@
-
-
-
 module BlackjackRule
   BLACKJACK_NUMBER = 21
   DEALER_STOP_POINT = 17
@@ -206,18 +203,6 @@ class BlackjackGame
     @round_over = false
   end
 
-  def run
-    game_header
-    initial_dealing
-    player_turn unless round_over
-    dealer_turn unless round_over
-    round_result
-    if continue_to_play?
-      clear_table
-      run
-    end
-  end
-
   def game_header
 
     puts "******************************"
@@ -292,8 +277,18 @@ class BlackjackGame
     dealer.show_total
   end
 
+  def run
+    game_header
+    initial_dealing
+    player_turn unless round_over
+    dealer_turn unless round_over
+    round_result
+    if continue_to_play?
+      clear_table
+      run
+    end
+  end
+
 end
 
-g = BlackjackGame.new
-g.run
-
+BlackjackGame.new.run
